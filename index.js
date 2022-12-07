@@ -9,6 +9,8 @@ import { RenderPass } from './jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from './jsm/postprocessing/UnrealBloomPass.js';
 import { FlyControls } from './jsm/controls/FlyControls.js';
 import { PointerLockControls } from './jsm/controls/PointerLockControls.js';
+import { FontLoader } from './jsm/loaders/FontLoader.js';
+import {TTFLoader} from './jsm/loaders/TTFLoader.js';
 
 let camera, renderer; 
 let gamepads;
@@ -16,16 +18,22 @@ const scene = new THREE.Scene();
 var light;
 var controls; 
 
-let loader = new GLTFLoader();
+let loaders = [];
+
 var dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath( '/js/draco/' );
-loader.setDRACOLoader( dracoLoader );
+
+for(var i = 0; i < 3; i++){
+    loaders[i] = new GLTFLoader();
+    loaders[i].setDRACOLoader( dracoLoader );
+}
+// new GLTFLoader();
 const clock = new THREE.Clock();
 let objetos = []; 
 let clonados = []; 
 let clonX=[], clonY=[], clonZ=[]; 
 let boolMesh = false; 
-let fuente; 
+let font; 
 let text = new THREE.Mesh();
 
 init(); 
@@ -70,16 +78,16 @@ function init(){
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1;
     renderer.outputEncoding = THREE.sRGBEncoding;
-    container.appendChild( renderer.domElement );
+     container.appendChild( renderer.domElement );
 
     // renderer.render( scene, camera );
     const geometry = new THREE.BoxGeometry( 3, 3, 3 );
     const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
     const cube = new THREE.Mesh( geometry, material );
     // scene.add( cube );
-
-    loader.load(
-	 '3d/0000001.gltf',
+    
+    loaders[0].load(
+	 '3d/01-corteza/0000000.gltf',
 	function ( gltf ) {
 	    gltf.scene.position.x = Math.random() * 2 -1;
 	    gltf.scene.position.z = Math.random() * 2 -1; 
@@ -101,11 +109,22 @@ function init(){
 	    }
 
 	    scene.children[1].geometry.attributes.position.needsUpdate = true;
-	    boolMesh = true; 
+	    boolMesh = true;
+	    
+	    const loader2 = new FontLoader(); 
+	    
+	    loader2.load( 'fonts/mono.json', function ( response ) {
+		font = response;
+		console.log("holi"); 
+	    } );
+	    
+	    animate(); 
+
 	})
 
-    loader.load(
-	'3d/0000000.gltf',
+    
+    loaders[1].load(
+	'3d/02-nopal/0000000.gltf',
 	function ( gltf ) {
 	    gltf.scene.position.x = Math.random() * 2 -1;
 	    gltf.scene.position.z = Math.random() * 2 -1; 
@@ -118,9 +137,9 @@ function init(){
 	    scene.add( objetos[1] );
 	    
 	})
-    
+    /*
     loader.load(
-	'3d/0000014.gltf',
+	'3d/03-agave/0000014.gltf',
 	function ( gltf ) {
 	    gltf.scene.position.x = Math.random() * 2 -1;
 	    gltf.scene.position.z = Math.random() * 2 -1; 
@@ -130,7 +149,8 @@ function init(){
 	    gltf.scene.scale.z = 16; 
 	    // coloresMesh = gltf.scene.children[0];
 	    scene.add( gltf.scene );	    
-	})
+	    })
+    */
 
     /*
     controls = new OrbitControls( camera, renderer.domElement );
@@ -148,8 +168,7 @@ function init(){
     
     window.addEventListener( 'resize', onWindowResize );
     // oscSend();    
-    animate();
-
+    // animate();
 
     
 }
@@ -191,4 +210,9 @@ function render() {
     controls.update(delta); 
     renderer.render( scene, camera );
 
+}
+
+
+function loadFont(){
+   
 }
