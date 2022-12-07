@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>THREE.studies</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <!-- <link type="text/css" rel="stylesheet" href="main.css">-->
+    <style>
+      body {
+	  margin: 0;
+	  background-color: black;
+	  overflow-y: hidden;
+	  
+      }
+      #blocker {
+	  position: absolute;
+	  width: 100%;
+	  height: 100%;
+	  background-color: rgba(0,0,0,0.5);
+      }
+      
+      #instructions {
+	  width: 100%;
+	  height: 100%;
+	  
+	  display: -webkit-box;
+	  display: -moz-box;
+	  display: box;
+	  
+	  -webkit-box-orient: horizontal;
+	  -moz-box-orient: horizontal;
+	  box-orient: horizontal;
+	  
+	  -webkit-box-pack: center;
+	  -moz-box-pack: center;
+	  box-pack: center;
+	  
+	  -webkit-box-align: center;
+	  -moz-box-align: center;
+	  box-align: center;
+	  
+	  color: #ffffff;
+	  text-align: center;
+	  font-family: Arial;
+	  font-size: 14px;
+	  line-height: 24px;
+	  
+	  cursor: pointer;
+      }
+      
+      #overlay {
+	  position: absolute;
+	  font-size: 16px;
+	  z-index: 2;
+	  top: 0;
+	  left: 0;
+	  width: 100%;
+	  height: 100%;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  flex-direction: column;
+	  background: rgba(0,0,0,0);
+      }
+      
+      #overlay button {
+	  background: transparent;
+	  border: 0;
+	  border: 1px solid rgb(255, 255, 255);
+	  border-radius: 4px;
+	  color: #ffffff;
+	  padding: 12px 18px;
+	  text-transform: uppercase;
+	  cursor: pointer;
+      }
+      
+      
+    </style>
+  </head>
+  <body>
+    
+    <div id="blocker">
+      
+      <div id="instructions">
+	<span style="font-size:36px">THREE.studies</span>
+	<br /><br />
+	Emilio Ocelotl <br/>
+	Electric Cello: Iracema de Andrade <br/>
+	Camera: Marianne Teixido<br/>
+	Staff: Nochy<br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+	
+      </div>
+      
+    </div>
+    
+    <div id="overlay">
+      <button id="startButton">Play</button>
+    </div>
+
+    <script type="module" src="index.js"></script>
+    
+  </body>
+</html>

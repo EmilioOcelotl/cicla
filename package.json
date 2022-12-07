@@ -1,0 +1,19 @@
+{
+			"main": "index.js",
+			"dependencies": {
+						"esbuild": "^0.14.28",
+						"osc-js": "^2.3.0",
+						"three": "^0.139.0",
+						"tone": "^14.7.77"
+			},
+			"scripts": {
+						"watch": "esbuild index.js --servedir=. --bundle --target=es6 --external:os --platform=node",
+						"build": "./scripts/build-demo.sh",
+						"build-deps": "yarn build-model && yarn build",
+						"build-model": "cd .. && yarn && yarn build-npm",
+						"lint": "eslint .",
+						"link-local": "yalc link @tensorflow-models/face-landmarks-detection",
+						"deployar": "yarn && yarn build-model && yarn build && cp -r audio dist && cp -r img dist && cp -r fonts dist",
+						"limpiar": "sudo rm -r dist node_modules"
+			}
+}
