@@ -35,6 +35,19 @@ let clonX=[], clonY=[], clonZ=[];
 let boolMesh = false; 
 let font; 
 let text = new THREE.Mesh();
+let textGeoClon; 
+
+/*
+let fuentes = ["corteza", "nopal", "agave", "cactus", "flor", "suculenta"];
+//let pruebas = [[0, 100, 200, 300], [1, 100, 200, 300]]; 
+console.log(fuentes.length); 
+let pruebas = [];
+let con=0;
+fuentes.forEach(fuente => {
+    pruebas[fuente] = [con++, Math.random(), Math.random(), Math.random()];
+})
+console.log(pruebas.corteza); 
+*/
 
 init(); 
 
@@ -43,15 +56,12 @@ function init(){
     document.body.style.cursor = 'none'; 
     const overlay = document.getElementById( 'overlay' );
     overlay.remove();
-
     const blocker = document.getElementById( 'blocker' );
     const instructions = document.getElementById( 'instructions' );
     instructions.remove(); 
     blocker.remove();
-    
     const container = document.createElement( 'div' );
     document.body.appendChild( container );
-    
     camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.25, 1000 );
     camera.position.set( 0, 0, 1 );
 
@@ -110,15 +120,12 @@ function init(){
 
 	    scene.children[1].geometry.attributes.position.needsUpdate = true;
 	    boolMesh = true;
+
+
+	    fuente(); 
 	    
-	    const loader2 = new FontLoader(); 
-	    
-	    loader2.load( 'fonts/mono.json', function ( response ) {
-		font = response;
-		console.log("holi"); 
-	    } );
-	    
-	    animate(); 
+	    animate();
+
 
 	})
 
@@ -185,26 +192,26 @@ function animate(){
 }
 
 function render() {
-
-     const delta = clock.getDelta();
-   
+    
+    const delta = clock.getDelta();
+    
     if(boolMesh){
-    const time = Date.now() * 0.01;
-
-    let perlin = new ImprovedNoise();
+	const time = Date.now() * 0.001;
+	
+	let perlin = new ImprovedNoise();
  
-    for( var i = 0; i < scene.children[1].geometry.attributes.position.count; i++){
-	let d = perlin.noise( (scene.children[1].geometry.attributes.position.getX(i))+time,
-			      scene.children[1].geometry.attributes.position.getY(i)+time,
-			      scene.children[1].geometry.attributes.position.getZ(i)+time ) * 0.2
-	 scene.children[1].geometry.attributes.position.setX(i, 4*clonX[i] * (d*4+1));
-	 scene.children[1].geometry.attributes.position.setY(i, 4*clonY[i] * (d*4+1));
-	scene.children[1].geometry.attributes.position.setZ(i, 4*clonZ[i] * (d+1));
+	for( var i = 0; i < scene.children[1].geometry.attributes.position.count; i++){
+	    let d = perlin.noise( (scene.children[1].geometry.attributes.position.getX(i))+time,
+				  scene.children[1].geometry.attributes.position.getY(i)+time,
+				  scene.children[1].geometry.attributes.position.getZ(i)+time ) * 0.1
+	    scene.children[1].geometry.attributes.position.setX(i, 4*clonX[i] * (d*4+1));
+	    scene.children[1].geometry.attributes.position.setY(i, 4*clonY[i] * (d*4+1));
+	    scene.children[1].geometry.attributes.position.setZ(i, 4*clonZ[i] * (d+1));
 
     }
-
-     scene.children[1].geometry.attributes.position.needsUpdate = true;
-     scene.children[1].geometry.computeVertexNormals(); 
+	
+	scene.children[1].geometry.attributes.position.needsUpdate = true;
+	scene.children[1].geometry.computeVertexNormals(); 
     }
     
     controls.update(delta); 
@@ -212,7 +219,31 @@ function render() {
 
 }
 
+function fuente(){
+    
+    const loader2 = new FontLoader(); 	    
+    loader2.load( 'fonts/cimatics.json', function ( response ) {
+	font = response;
+	console.log("holi");
+	texto(); 
+    } );
+}
 
-function loadFont(){
+function texto(){
+    const materialT = new THREE.MeshStandardMaterial({color: 0xa0a0a0, metalnenss: 0.8, roughness: 0.2, flatShading: true});
+
+    text.material = materialT; 
+    
+    const message = "holitas"; 
+    const shapes = font.generateShapes( message, 1.25 );
+    const geometry = new THREE.ShapeGeometry( shapes );
+    textGeoClon = geometry.clone(); 
+    geometry.computeBoundingBox();
+    geometry.computeVertexNormals(); 
+    const xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
+    geometry.translate( xMid, 0, 0 );
    
+    text.geometry= geometry;
+    scene.add(text); 
+
 }
