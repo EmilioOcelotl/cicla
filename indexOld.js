@@ -14,30 +14,11 @@ import { FontLoader } from './jsm/loaders/FontLoader.js';
 import { Flow } from './jsm/modifiers/CurveModifier.js';
 import { TextGeometry } from './jsm/geometries/TextGeometry.js';
 
-// RenderTarget 
-
-const rtWidth = 1920*2;
-const rtHeight = 1080;
-const renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight, { format: THREE.RGBAFormat } );
-const rtFov = 75;
-const rtAspect = rtWidth / rtHeight;
-const rtNear = 0.1;
-const rtFar = 5;
-const rtCamera = new THREE.PerspectiveCamera(rtFov, rtAspect, rtNear, rtFar);
-rtCamera.position.z = 4;
-
-const rtScene = new THREE.Scene();
-
-
 let moveForward = false;
 let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
 let canJump = false;
-let escena = 0; 
-let booltext = false; 
-let textClone; 
-let lineasSelectas = []; 
 
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
@@ -54,15 +35,7 @@ const scene = new THREE.Scene();
 var light;
 var controls; 
 
-let message = []; 
-
-message[0] = "La gran movilidad del capital y la reproducción sexual no pueden restringir las libertades que quieren otorgar al uso de IRC no se pueden hacer";
-
-message[1] = "Otra cosa mariposa miau miau"; 
-
 let loaders = [];
-
-console.log(message[Math.floor(Math.random()*2)]); 
 
 var dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath( '/js/draco/' );
@@ -81,25 +54,25 @@ let font;
 let text = new THREE.Mesh();
 let textGeoClon; 
 
+/*
+let fuentes = ["corteza", "nopal", "agave", "cactus", "flor", "suculenta"];
+//let pruebas = [[0, 100, 200, 300], [1, 100, 200, 300]]; 
+console.log(fuentes.length); 
+let pruebas = [];
+let con=0;
+fuentes.forEach(fuente => {
+    pruebas[fuente] = [con++, Math.random(), Math.random(), Math.random()];
+})
+console.log(pruebas.corteza); 
+*/
+
+// init(); 
+
 const startButton = document.getElementById( 'startButton' );
+
 startButton.addEventListener( 'click', init );
 
-let lineasInicio = []; 
 
-const loadertext = new THREE.FileLoader();
-
-loadertext.load(
-	'txt/inicio.txt',
-	function ( data ) {
-	    var arrLines = data.split("\n");
-	    for (var i = 0; i < arrLines.length; i++) {
-		lineasInicio.push(arrLines[i]);
-	    }
-	}
-);
-
-console.log(lineasInicio); 
- 
 function init(){
     
     document.body.style.cursor = 'none'; 
@@ -112,8 +85,8 @@ function init(){
     const container = document.createElement( 'div' );
     document.body.appendChild( container );
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
-    
-    camera.position.set(0, 0, 40 );
+    camera.position.y = -10; 
+    // camera.position.set(0, 0, 0 );
 
     const path = 'img/';
     const format = '.jpg';
@@ -122,15 +95,16 @@ function init(){
 	path + 'py' + format, path + 'ny' + format,
 	path + 'pz' + format, path + 'nz' + format
     ];
-
+    
     const reflectionCube = new THREE.CubeTextureLoader().load( urls );
     const refractionCube = new THREE.CubeTextureLoader().load( urls );
     refractionCube.mapping = THREE.CubeRefractionMapping;
+
     scene.background = reflectionCube;
 
     light = new THREE.PointLight( 0xffffff, 1 );
     light.position.set( 0, 20, 10 );
-    scene.add( light ); 
+    scene.add( light ); // children 1
     //light = new THREE.DirectionalLight( 0xffaa33 );
     //light.position.set( - 10, 10, 10 );
     //light.intensity = 1.0;
@@ -140,22 +114,74 @@ function init(){
     //light2.intensity = 1.0;
     //scene.add( light2 );
 
-    const materialrt = new THREE.MeshBasicMaterial({
-	map: renderTarget.texture,
-	transparent: true
-    });
+    let radio = 10;
+    let curvePosX=[], curvePosY=[]; 
 
-    const geometry = new THREE.BoxGeometry( 1920, 1080/2, 1 );
-    const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
-    const cube = new THREE.Mesh( geometry, materialrt );
-    scene.add( cube );
+    let initialPoints = []; 
+
+    let contador = 0;
     
-    renderer = new THREE.WebGLRenderer( { antialias: true, alpha:true } );
+    for(let i = 0; i < 10; i+=1){
+	// initialPoints.push(contador);
+	initialPoints[contador] = {x:0, y:0, z:0};
+	contador++; 
+    }
+
+   contador = 0; 
+
+    for(let i = 0; i < 10; i+=1){
+	let s = i * (Math.PI * 2);
+	let theta = s/radio;
+	let xa = radio * Math.cos(theta);
+	let ya = radio * Math.sin(theta);
+	curvePosX.push(xa);
+	curvePosY.push(ya);
+	initialPoints[contador].x = curvePosX[contador];
+	initialPoints[contador].y = 10;
+	initialPoints[contador].z = curvePosY[contador]; 
+	contador++
+    }
+
+   
+    console.log(initialPoints); 
+
+
+   /*
+    const initialPoints = [
+	{ x: -1, y: 10, z: 1 },
+	{ x: 1, y: 10, z: 1 },
+	{ x: 1, y: 10, z: -1 },
+	{ x: -1, y: 10, z: -1 },
+	];
+    console.log(initialPoints); 
+   */
+    
+    const boxGeometry = new THREE.BoxGeometry( 2, 2, 2 );
+    const boxMaterial = new THREE.MeshBasicMaterial();
+    
+    for ( const handlePos of initialPoints ) {
+	const handle = new THREE.Mesh( boxGeometry, boxMaterial );
+	handle.position.copy( handlePos );
+	curveHandles.push( handle );
+	scene.add( handle );
+
+    }
+    
+    curve = new THREE.CatmullRomCurve3(
+	curveHandles.map( ( handle ) => handle.position )
+    );
+    curve.curveType = 'centripetal';
+    curve.closed = true;
+
+    
+    renderer = new THREE.WebGLRenderer( { antialias: true } );
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
-    container.appendChild( renderer.domElement );
-
-    /*
+    //renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    //renderer.toneMappingExposure = 1;
+    //renderer.outputEncoding = THREE.sRGBEncoding;
+     container.appendChild( renderer.domElement );
+    
     loaders[0].load(
 	 '3d/01-corteza/0000000.gltf',
 	function ( gltf ) {
@@ -180,10 +206,16 @@ function init(){
 
 	    scene.children[1].geometry.attributes.position.needsUpdate = true;
 	    boolMesh = true;
-	    fuente();
+
+	    fuente(); 
+	    
 	    animate();
+
+
 	})
 	    
+
+    
     loaders[1].load(
 	'3d/02-nopal/0000000.gltf',
 	function ( gltf ) {
@@ -198,8 +230,36 @@ function init(){
 	    scene.add( objetos[1] );
 	    
 	})
+    /*
+    loader.load(
+	'3d/03-agave/0000014.gltf',
+	function ( gltf ) {
+	    gltf.scene.position.x = Math.random() * 2 -1;
+	    gltf.scene.position.z = Math.random() * 2 -1; 
+	    gltf.scene.lookAt(0, 0, 0);
+	    gltf.scene.scale.x = 16;
+	    gltf.scene.scale.y = 16;
+	    gltf.scene.scale.z = 16; 
+	    // coloresMesh = gltf.scene.children[0];
+	    scene.add( gltf.scene );	    
+	    })
     */
-    
+
+    /*
+    controls = new OrbitControls( camera, renderer.domElement );
+    controls.target.set( 0, 0, 0 );
+    controls.update();
+   
+    controls = new FlyControls( camera, renderer.domElement );
+
+    controls.movementSpeed = 10;
+    controls.domElement = renderer.domElement;
+    controls.rollSpeed = Math.PI / 24 ;
+    controls.autoForward = false;
+    controls.dragToLook = false;
+
+    */
+
     controls = new PointerLockControls( camera, document.body );
     controls.lock();
 
@@ -207,38 +267,7 @@ function init(){
     
     const onKeyDown = function ( event ) {
 	
-	switch ( event.code ) {	    
-	case 'Digit1':
-	    add1();
-	    // texto(message[0]); 
-	    break;
-	case 'Digit2':
-	    add2(); 
-	    rm1(); 
-	    break;
-	case 'Digit3':
-	    //Texto como textura en un objeto, revisar el tutorial de kinetic scupture
-	    console.log("escena 3");
-	    break;
-	case 'Digit4':
-	    // Todo lo anterior pero con feedback
-	    console.log("escena 4");
-	    break; 
-	    
-	case 'Digit5':
-	    // Equirectangular y objetos escaneados
-	    console.log("escena 5");
-	    break; 
-	    
-	case 'Digit6':
-	    // Disolvencia modo consola
-	    console.log("escena 6");
-	    break;
-
-	case 'Digit7':
-	    // Eliminar todo
-	    console.log("escena 7");
-	    break; 
+	switch ( event.code ) {
 	    
 	case 'ArrowUp':
 	case 'KeyW':
@@ -299,10 +328,11 @@ function init(){
     
     document.addEventListener( 'keydown', onKeyDown );
     document.addEventListener( 'keyup', onKeyUp );
+    
     window.addEventListener( 'resize', onWindowResize );
     // oscSend();    
-    animate();
-    fuente(); 
+    // animate();
+
     
 }
 
@@ -313,166 +343,20 @@ function onWindowResize() {
 }
 
 function animate(){
-    render();
-    
     requestAnimationFrame ( animate );
+    
+    
+    render();
 }
 
 function render() {
-
-    controles(); 
-
-    switch( escena ) {
-    case 0:
-	// inicio
-	break; 
-    case 0:
-	// No hay actualización
-	break;
-    case 1:
-	// Ya hay actualización
-    case 2:
-	up2();
-	break; 
-    }
-
     
-    renderer.setRenderTarget(renderTarget);
-    
-    renderer.setClearColor(0x000000, 0);
-    renderer.render(rtScene, rtCamera);
-    renderer.setRenderTarget(null);
-    
-    renderer.render( scene, camera );
+    // const delta = clock.getDelta();
 
-}
-
-function fuente(){
-    
-    const loader2 = new FontLoader(); 	    
-    loader2.load( 'fonts/square.json', function ( response ) {
-	font = response;
-	//console.log("holi");
-	// texto();
-    } );
-}
-
-// la primera escena no necesita actualización
-
-function add1(){
-    console.log("Primera");
-    escena = 1;
-    booltext = false;
-    
-    let numero = Math.floor(Math.random()*lineasInicio.length); 
-    lineasSelectas.unshift( lineasInicio[numero]+"\n");
-    if( lineasSelectas.length > 12){
-	lineasSelectas.pop(); 
-    }
-
-    // console.log(lineasSelectas.join());
-
-    texto(lineasSelectas.join());
-}
-
-function rm1(){
-    scene.remove(texto2); 
-}
-
-// segunda escena si necesita actualización 
-
-function add2(){
-    
-    let numero = Math.floor(Math.random()*lineasInicio.length); 
-    lineasSelectas.unshift( lineasInicio[numero]+"\n");
-    if( lineasSelectas.length > 12){
-	lineasSelectas.pop(); 
-    }
-
-    // console.log(lineasSelectas.join());
-
-    texto2(lineasSelectas.join());
-}
-
-function up2(){
-    if(booltext){
-	const time = Date.now() * 0.0001;
-	let perlin = new ImprovedNoise();
-	for( var i = 0; i < text.geometry.attributes.position.count; i++){
-	    let d = perlin.noise(text.geometry.attributes.position.getX(i)+time,
-				 text.geometry.attributes.position.getY(i)+time,
-				 text.geometry.attributes.position.getZ(i)+time ) * 0.1
-	    text.geometry.attributes.position.setX(i, clonX[i] * (d+1));
-	    text.geometry.attributes.position.setY(i, clonY[i] * (d+1));
-	    text.geometry.attributes.position.setZ(i, clonZ[i] * (d+1));
-
-    }	
-	text.geometry.attributes.position.needsUpdate = true;
-	text.geometry.computeVertexNormals();
-    }
-}
-
-function rm2(){
-    scene.remove(texto); 
-}
-
-
-function texto( mensaje ){
-    //const materialT = new THREE.MeshStandardMaterial({color: 0xffffff, metalnenss: 0.8, roughness: 0.2, flatShading: true});
-
-    const materialT = new THREE.MeshBasicMaterial({color: 0xffffff});
-    text.material = materialT; 
-    const shapes = font.generateShapes( mensaje, 0.2 );
-    const geometry = new THREE.ShapeGeometry( shapes );
-    // textGeoClon = geometry.clone(); // para modificar
-    text.geometry.dispose(); 
-    text.geometry= geometry;
-    geometry.computeBoundingBox();
-    geometry.computeVertexNormals(); 
-    // const xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
-    //geometry.translate( xMid, 0, 0 );
-    text.geometry= geometry;
-    rtScene.add(text); 
-    text.position.y = 2.5;
-    text.position.x = -10.5; 
-
-    //let lineasSelectas = [];
-}
-
-function texto2( mensaje ){
-    //const materialT = new THREE.MeshStandardMaterial({color: 0xffffff, metalnenss: 0.8, roughness: 0.2, flatShading: true});
-
-    const materialT = new THREE.MeshBasicMaterial({color: 0xffffff});
-    text.material = materialT; 
-    const shapes = font.generateShapes( mensaje, 2 );
-    const geometry = new THREE.ShapeGeometry( shapes );
-    textGeoClon = geometry.clone(); // para modificar
-    text.geometry.dispose(); 
-    text.geometry= geometry;
-    geometry.computeBoundingBox();
-    geometry.computeVertexNormals(); 
-    // const xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
-    geometry.translate( 0,40, 0 );
-    text.geometry= geometry;
-    scene.add(text); 
-    text.position.y = 10;
-    booltext = true;
-
-    textClone = text.clone(); 
-    
-    for(let i = 0; i < textClone.geometry.attributes.position.count; i++){
-	clonX[i] = textClone.geometry.attributes.position.getX(i);
-	clonY[i] = textClone.geometry.attributes.position.getY(i);
-	clonZ[i] = textClone.geometry.attributes.position.getZ(i);
-    }
-
-    text.geometry.attributes.position.needsUpdate = true;
-    
-}
-
-function controles(){
     const time = performance.now();
+
     const delta = ( time - prevTime ) / 1000;
+    
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
     velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
@@ -495,8 +379,94 @@ function controles(){
 	velocity.y = 0;
 	controls.getObject().position.y = 10;
 	
-	canJump = true;	
+	canJump = true;
+	
     }
-        prevTime = time;
+
+    
+    if(boolMesh){
+	const time = Date.now() * 0.001;
+	
+	let perlin = new ImprovedNoise();
+ 
+	for( var i = 0; i < scene.children[1].geometry.attributes.position.count; i++){
+	    let d = perlin.noise( (scene.children[1].geometry.attributes.position.getX(i))+time,
+				  scene.children[1].geometry.attributes.position.getY(i)+time,
+				  scene.children[1].geometry.attributes.position.getZ(i)+time ) * 0.1
+	    scene.children[1].geometry.attributes.position.setX(i, 4*clonX[i] * (d*4+1));
+	    scene.children[1].geometry.attributes.position.setY(i, 4*clonY[i] * (d*4+1));
+	    scene.children[1].geometry.attributes.position.setZ(i, 4*clonZ[i] * (d+1));
+
+    }
+	
+	scene.children[1].geometry.attributes.position.needsUpdate = true;
+	scene.children[1].geometry.computeVertexNormals(); 
+    }
+    prevTime = time;
+
+    // controls.update(delta); 
+    renderer.render( scene, camera );
+
+}
+
+function fuente(){
+    
+    const loader2 = new FontLoader(); 	    
+    loader2.load( 'fonts/cimatics.json', function ( response ) {
+
+	font = response;
+	//console.log("holi");
+	// texto(); 
+	
+	const geometryss = new TextGeometry( 'La gran movilidad del capital', {
+	    font: font,
+	    size:0.5,
+	    height: 0.01,
+	    
+	    curveSegments: 12,
+	    bevelEnabled: true,
+	    bevelThickness: 0.02,
+	    bevelSize: 0.01,
+	    bevelOffset: 0,
+	    bevelSegments: 5,
+	    
+	} );
+
+	geometryss.computeBoundingBox();
+	geometryss.computeVertexNormals(); 
+ 
+	geometryss.rotateX( Math.PI );
+	
+	const materialss = new THREE.MeshStandardMaterial( {
+	    color: 0xffffff
+	} );
+	
+	const objectToCurve = new THREE.Mesh( geometryss, materialss );
+	
+	flow = new Flow( objectToCurve );
+	flow.updateCurve( 0, curve );
+	scene.add( flow.object3D );
+	
+	// texto();
+	
+    } );
+}
+
+function texto(){
+    // const materialT = new THREE.MeshStandardMaterial({color: 0xa0a0a0, metalnenss: 0.8, roughness: 0.2, flatShading: true});
+
+    // text.material = materialT; 
+    
+    const message = "La gran movilidad del capital y la reproducción sexual no pueden restringir las libertades que quieren otorgar al uso de IRC no se pueden hacer"; 
+    const shapes = font.generateShapes( message, 1 );
+    const geometry = new THREE.ShapeGeometry( shapes );
+    textGeoClon = geometry.clone(); 
+    geometry.computeBoundingBox();
+    geometry.computeVertexNormals(); 
+    const xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
+    geometry.translate( xMid, 0, 0 );
+   
+    text.geometry= geometry;
+    // scene.add(text); 
 
 }
