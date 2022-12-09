@@ -14,9 +14,13 @@ import { FontLoader } from './jsm/loaders/FontLoader.js';
 import { Flow } from './jsm/modifiers/CurveModifier.js';
 import { TextGeometry } from './jsm/geometries/TextGeometry.js';
 
+let modelos = []; 
+let materialVit; 
+
 // hydra
 
 let switchhydra = 0;
+let refractionCube; 
 
 var hydra = new Hydra({
     canvas: document.getElementById("myCanvas"),
@@ -31,7 +35,7 @@ let vit = new THREE.CanvasTexture(elCanvas);
 // RenderTarget 
 
 let cubort; 
-const rtWidth = 1920*2;
+const rtWidth = 1080;
 const rtHeight = 1080;
 const renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight, { format: THREE.RGBAFormat } );
 const rtFov = 75;
@@ -81,7 +85,7 @@ console.log(message[Math.floor(Math.random()*2)]);
 var dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath( '/js/draco/' );
 
-for(var i = 0; i < 3; i++){
+for(var i = 0; i < 15; i++){
     loaders[i] = new GLTFLoader();
     loaders[i].setDRACOLoader( dracoLoader );
 }
@@ -141,11 +145,9 @@ function init(){
     refractionCube.mapping = THREE.CubeRefractionMapping;
     scene.background = reflectionCube;
     */
-
-    fondos(); 
     
-    light = new THREE.PointLight( 0xffffff, 1 );
-    light.position.set( 0, 20, 10 );
+    light = new THREE.PointLight( 0xffffff, 3 );
+    light.position.set( 0, 0, 10 );
     scene.add( light ); 
 
     //light = new THREE.DirectionalLight( 0xffaa33 );
@@ -158,11 +160,12 @@ function init(){
     scene.add( light2 );
 
     const geometryTor = new THREE.TorusKnotGeometry( 10, 3, 100, 16 );
-    const materialTor = new THREE.MeshBasicMaterial( { color: 0xffffff, map: vit } );
-    const torusKnot = new THREE.Mesh( geometryTor, materialTor );
+    materialVit = new THREE.MeshStandardMaterial( { color: 0xffffff, map: vit, envMap: refractionCube, roughness: 0.1, metalness:0.7 } );
+    //const materialTor = new THREE.MeshLambertMaterial( { color: 0xffffff, envMap: refractionCube, map: vit } );
+    const torusKnot = new THREE.Mesh( geometryTor, materialVit );
     scene.add( torusKnot );
 
-    swhydra(0);
+    swhydra();
 
     const materialrt = new THREE.MeshBasicMaterial({
 	map: renderTarget.texture,
@@ -170,11 +173,13 @@ function init(){
     });
 
     //const geometry = new THREE.BoxGeometry( 1920, 1080/2, 1 );
-    const geometry = new THREE.PlaneGeometry( 1920, 1080/2, 20, 20 );
+    const geometry = new THREE.PlaneGeometry( 1080/2, 1080/2, 10, 20 );
 
-    const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+    const cubeMaterial3 = new THREE.MeshBasicMaterial( { color: 0xff6600, side: THREE.DoubleSide } );
+
     cubort = new THREE.Mesh( geometry, materialrt );
-    scene.add( cubort );
+ 
+    scene.add( cubort ); 
     
     renderer = new THREE.WebGLRenderer( { antialias: true, alpha:true } );
     renderer.setPixelRatio( window.devicePixelRatio );
@@ -236,6 +241,9 @@ function init(){
 	switch ( event.code ) {	    
 	case 'Digit1':
 	    add1();
+	    //text.position.x = 10;
+	    //text.position.z = 10;
+	    // text.lookAt(0, 0, 0); 
 	    // texto(message[0]); 
 	    break;
 	case 'Digit2':
@@ -245,6 +253,8 @@ function init(){
 	case 'Digit3':
 	    //Texto como textura en un objeto, revisar el tutorial de kinetic scupture
 	    console.log("escena 3");
+	    fondos();
+	    add3();
 	    break;
 	case 'Digit4':
 	    // Todo lo anterior pero con feedback
@@ -285,6 +295,10 @@ function init(){
 	case 'KeyD':
 	    moveRight = true;
 	    break;
+
+	case'KeyC':
+	    swhydra();
+	    break; 
 	    
 	case 'Space':
 	    if ( canJump === true ) velocity.y += 350;
@@ -354,6 +368,7 @@ function render() {
 	// inicio
 	break; 
     case 1:
+	up1(); 
 	break; 
     case 2:
 	up2();
@@ -398,6 +413,16 @@ function add1(){
     texto(lineasSelectas.join());
 }
 
+function up1(){
+    var time2 = Date.now() * 0.0005;
+    
+    cubort.position.x = Math.sin( time * 0.01 ) * ( 75 + Math.sin( time * 0.5 )* 400); 
+    cubort.position.y = Math.cos( time * 0.1 ) * 100; 
+    cubort.position.z = Math.cos( time * 0.01 ) * - 400; 
+
+    cubort.lookAt(0, 0, 0);
+}
+
 function rm1(){
     scene.remove(texto2); 
 }
@@ -424,9 +449,9 @@ function up2(){
 	const time = Date.now() * 0.001;
 	let perlin = new ImprovedNoise();
 	for( var i = 0; i < cubort.geometry.attributes.position.count; i++){
-	    let d = perlin.noise(cubort.geometry.attributes.position.getX(i)+time,
-				 cubort.geometry.attributes.position.getY(i)+time,
-				 cubort.geometry.attributes.position.getZ(i)+time ) * 0.5
+	    let d = perlin.noise(cubort.geometry.attributes.position.getX(i)*0.01+time,
+				 cubort.geometry.attributes.position.getY(i)*0.01,time,
+				 cubort.geometry.attributes.position.getZ(i)*0.01+time ) * 0.2
 	    cubort.geometry.attributes.position.setX(i, clonX[i] * (d+1));
 	    cubort.geometry.attributes.position.setY(i, clonY[i] * (d+1));
 	    cubort.geometry.attributes.position.setZ(i, clonZ[i] * (d+1));
@@ -434,11 +459,471 @@ function up2(){
     }	
 	cubort.geometry.attributes.position.needsUpdate = true;
 	cubort.geometry.computeVertexNormals();
+
+	
+    var time2 = Date.now() * 0.0005;
+    
+    cubort.position.x = Math.sin( time * 0.01 ) * ( 75 + Math.sin( time * 0.5 )* 400); 
+    cubort.position.y = Math.cos( time * 0.1 ) * 100; 
+    cubort.position.z = Math.cos( time * 0.01 ) * - 400; 
+
+    cubort.lookAt(0, 0, 0); 
+
     }
+    
+    
 }
 
 function rm2(){
     scene.remove(texto); 
+}
+
+function add3(){
+    
+    let modelosNombres = ['01-corteza', '02-nopal', '03-agave', '04-cactus', '05-flor', '06-suculenta', '08-maguey', '09-hojas', '10-grid', '11-estrella', '12-roca', '13-hojas', '14-grid', '15-tronco', '16-hojas']
+
+        console.log(scene.children[5]); 
+
+    for(let i = 0; i < 15; i++){
+	scene.remove(scene.children[i+5]); 
+    }
+    
+        loaders[0].load(
+	    '3d/'+modelosNombres[0]+'/0000000.gltf',
+	    function ( gltf ){
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+	)
+
+    loaders[1].load(
+	    '3d/'+modelosNombres[1]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+		gltf.scene.children[0].material.map = materialVit.map;
+
+				let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+    loaders[2].load(
+	    '3d/'+modelosNombres[2]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+    
+
+    loaders[3].load(
+	    '3d/'+modelosNombres[3]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+    
+    loaders[4].load(
+	    '3d/'+modelosNombres[4]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+    
+    loaders[5].load(
+	    '3d/'+modelosNombres[5]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+
+    loaders[5].load(
+	    '3d/'+modelosNombres[5]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+    
+    loaders[6].load(
+	    '3d/'+modelosNombres[6]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+    
+    loaders[7].load(
+	    '3d/'+modelosNombres[7]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+    
+    loaders[8].load(
+	    '3d/'+modelosNombres[8]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+        loaders[9].load(
+	    '3d/'+modelosNombres[9]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+	)
+
+        loaders[10].load(
+	    '3d/'+modelosNombres[10]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+    
+        loaders[11].load(
+	    '3d/'+modelosNombres[11]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+
+        loaders[12].load(
+	    '3d/'+modelosNombres[12]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+    
+        loaders[13].load(
+	    '3d/'+modelosNombres[13]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+    
+        loaders[14].load(
+	    '3d/'+modelosNombres[10]+'/0000000.gltf',
+	    function ( gltf ){
+
+		gltf.scene.scale.x = 400;
+		gltf.scene.scale.y = 400;
+		gltf.scene.scale.z = 400;
+		gltf.scene.position.x = Math.random()*100-50;
+		gltf.scene.position.z = Math.random()*100-50;
+		gltf.scene.position.y = 0; 
+		gltf.scene.lookAt(0, 0, 0);
+
+		let rando = Math.floor(Math.random() * 3);
+		if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map; 
+		}
+		if(rando == 2){
+		    gltf.scene.children[0].material.map = materialVit.map; 
+		}
+		
+		//modelos[i] = gltf.scene.children[0];
+		scene.add(gltf.scene);
+	    
+	    }
+    )
+
+
+}
+
+function up3(){
+}
+
+function rm3(){
+    for(let i = 0; i < modelos.length; modelos++){
+	scene.remove(modelos[i]); 
+    }
 }
 
 
@@ -458,7 +943,7 @@ function texto( mensaje ){
     //geometry.translate( xMid, 0, 0 );
     text.geometry= geometry;
     rtScene.add(text); 
-    text.position.y = 2.5;
+    text.position.y = 1.5;
     text.position.x = -10.5; 
 
     //let lineasSelectas = [];
@@ -481,7 +966,7 @@ function texto2( mensaje ){
     //geometry.translate( xMid, 0, 0 );
     text.geometry= geometry;
     rtScene.add(text); 
-    text.position.y = 2.5;
+    text.position.y = 1.5;
     text.position.x = -10.5; 
 
     booltext = true;
@@ -851,8 +1336,25 @@ function fondos( ) {
     ];
 
     const reflectionCube = new THREE.CubeTextureLoader().load( urls );
-    const refractionCube = new THREE.CubeTextureLoader().load( urls );
-    refractionCube.mapping = THREE.CubeRefractionMapping;
+    refractionCube = new THREE.CubeTextureLoader().load( urls );
+    refractionCube.mapping = THREE.CubeReflectionMapping;
     scene.background = reflectionCube;
+    
+}
+
+function plantas(){
+
+    // son 16 objetos ¿ Se pueden cargar desde el inicio ? 
+
+    plantContador = 0;
+
+    if(plantContador > 16){
+	plantContador = 0;
+	// eliminar todos o eliminar solamente el último 
+    }
+    
+    plantContador++; 
+    
+    const patharray = [];
     
 }
