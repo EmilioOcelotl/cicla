@@ -14,6 +14,13 @@ import { FontLoader } from './jsm/loaders/FontLoader.js';
 import { Flow } from './jsm/modifiers/CurveModifier.js';
 import { TextGeometry } from './jsm/geometries/TextGeometry.js';
 
+let creditos; 
+let torusClone, torusKnot; 
+
+let audioBool = false; 
+var audioCtx = new AudioContext();
+let analyser, dataArray, microphone;
+
 let modelos = []; 
 let materialVit; 
 
@@ -146,7 +153,7 @@ function init(){
     scene.background = reflectionCube;
     */
     
-    light = new THREE.PointLight( 0xffffff, 3 );
+    light = new THREE.PointLight( 0xffffff, 4 );
     light.position.set( 0, 0, 10 );
     scene.add( light ); 
 
@@ -154,15 +161,20 @@ function init(){
     //light.position.set( - 10, 10, 10 );
     //light.intensity = 1.0;
     //scene.add( light )
+
     
     const light2 = new THREE.AmbientLight( 0x003973 );
     light2.intensity = 1.0;
     scene.add( light2 );
 
-    const geometryTor = new THREE.TorusKnotGeometry( 10, 3, 100, 16 );
+    // const geometryTor = new THREE.SphereGeometry( 20, 32, 16 );
+
+    const geometryTor = new THREE.TorusKnotGeometry( 20, 3, 100, 100 );
     materialVit = new THREE.MeshStandardMaterial( { color: 0xffffff, map: vit, envMap: refractionCube, roughness: 0.1, metalness:0.7 } );
     //const materialTor = new THREE.MeshLambertMaterial( { color: 0xffffff, envMap: refractionCube, map: vit } );
-    const torusKnot = new THREE.Mesh( geometryTor, materialVit );
+    torusKnot = new THREE.Mesh( geometryTor, materialVit );
+    
+    torusClone = torusKnot.clone(); 
     scene.add( torusKnot );
 
     swhydra();
@@ -180,6 +192,14 @@ function init(){
     cubort = new THREE.Mesh( geometry, materialrt );
  
     scene.add( cubort ); 
+
+    const texturecred = new THREE.TextureLoader().load( "img/nx.jpg" );
+
+    const geometrycred = new THREE.PlaneGeometry( 40, 40 );
+    const materialcred = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, map: texturecred} );
+    creditos = new THREE.Mesh( geometrycred, materialcred );
+    creditos.position.y = 10; 
+    // scene.add( creditos );
     
     renderer = new THREE.WebGLRenderer( { antialias: true, alpha:true } );
     renderer.setPixelRatio( window.devicePixelRatio );
@@ -259,6 +279,7 @@ function init(){
 	case 'Digit4':
 	    // Todo lo anterior pero con feedback
 	    console.log("escena 4");
+	    final(); 
 	    break; 
 	    
 	case 'Digit5':
@@ -336,12 +357,44 @@ function init(){
 	}
 	
     };
-    
+
     document.addEventListener( 'keydown', onKeyDown );
     document.addEventListener( 'keyup', onKeyUp );
     window.addEventListener( 'resize', onWindowResize );
     // oscSend();    
-    animate();
+    
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    let bufferLength = analyser.frequencyBinCount;
+    dataArray = new Uint8Array(bufferLength);
+
+    analyser.getByteTimeDomainData(dataArray)
+    analyser.smoothingTimeConstant = 0.99; 
+
+    	
+    // const audioCtx = new AudioContext();
+    if (navigator.mediaDevices) {
+	navigator.mediaDevices.getUserMedia({"audio": true}).then((stream) => {
+
+	    
+	    microphone = audioCtx.createMediaStreamSource(stream);
+	    console.log("hay mic");
+	    microphone.connect(analyser);
+	    audioBool = true;
+	    animate(); 
+	    // samples();
+	    
+	    // `microphone` can now act like any other AudioNode
+	}).catch((err) => {
+	    // browser unable to access microphone
+	    // (check to see if microphone is attached)
+	});
+    } else {
+	// browser unable to access media devices
+	// (update your browser)
+	}
+
+    //animate()
     fuente(); 
     
 }
@@ -358,6 +411,21 @@ function animate(){
 }
 
 function render() {
+
+    /*
+    for ( var i = 0; i < torusKnot.geometry.attributes.position.count; i++){
+	torusKnot.geometry.attributes.position.setX(i, torusClone.geometry.attributes.position.getX(i) * (dataArray[i])); 
+	torusKnot.geometry.attributes.position.setY(i, torusClone.geometry.attributes.position.getY(i) * (dataArray[i])); 
+	torusKnot.geometry.attributes.position.setZ(i, torusClone.geometry.attributes.position.getZ(i) * (dataArray[i])); 
+
+    }
+
+    
+    analyser.getByteFrequencyData(dataArray);
+   */
+
+    torusKnot.geometry.attributes.position.needsUpdate = true;
+    torusClone.geometry.attributes.position.needsUpdate = true;
     
     vit.needsUpdate = true; 
 
@@ -374,7 +442,11 @@ function render() {
 	up2();
 	break; 
     }
-    
+
+
+    //if(audioBool){
+
+ 
     renderer.setRenderTarget(renderTarget);
     
     renderer.setClearColor(0x000000, 0);
@@ -1356,5 +1428,21 @@ function plantas(){
     plantContador++; 
     
     const patharray = [];
+    
+}
+
+function final(){
+
+    scene.background = new THREE.Color( 0x000000 );
+
+    scene.background = color
+    scene.add( creditos ); 
+    /*
+    for(let i = 0; i < 15; i++){
+	scene.remove(scene.children[i+5]); 
+	}
+	*/
+
+    scene.remove(torusKnot);
     
 }
