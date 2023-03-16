@@ -14,6 +14,13 @@ import { FontLoader } from './jsm/loaders/FontLoader.js';
 import { Flow } from './jsm/modifiers/CurveModifier.js';
 import { TextGeometry } from './jsm/geometries/TextGeometry.js';
 
+let texture;
+let dpr = window.devicePixelRatio; 
+let textureSize = 1024 * dpr;
+const vector = new THREE.Vector2();
+let megamesh;
+let retroBool = true; 
+let analisisBool = false; 
 let creditos; 
 let torusClone, torusKnot; 
 
@@ -79,7 +86,8 @@ const scene = new THREE.Scene();
 var light;
 var controls; 
 
-let message = []; 
+let message = [];
+let achim = []; 
 
 message[0] = "La gran movilidad del capital y la reproducción sexual no pueden restringir las libertades que quieren otorgar al uso de IRC no se pueden hacer";
 
@@ -134,9 +142,11 @@ function init(){
     blocker.remove();
     const container = document.createElement( 'div' );
     document.body.appendChild( container );
-    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 2000 );
     
     camera.position.set(0, 0, 40 );
+
+    retro(); 
 
     /*
     const path = 'maps/1-cueva/';
@@ -161,7 +171,6 @@ function init(){
     //light.position.set( - 10, 10, 10 );
     //light.intensity = 1.0;
     //scene.add( light )
-
     
     const light2 = new THREE.AmbientLight( 0x003973 );
     light2.intensity = 1.0;
@@ -169,13 +178,14 @@ function init(){
 
     // const geometryTor = new THREE.SphereGeometry( 20, 32, 16 );
 
+    
     const geometryTor = new THREE.TorusKnotGeometry( 20, 3, 100, 100 );
     materialVit = new THREE.MeshStandardMaterial( { color: 0xffffff, map: vit, envMap: refractionCube, roughness: 0.1, metalness:0.7 } );
     //const materialTor = new THREE.MeshLambertMaterial( { color: 0xffffff, envMap: refractionCube, map: vit } );
     torusKnot = new THREE.Mesh( geometryTor, materialVit );
     
     torusClone = torusKnot.clone(); 
-    scene.add( torusKnot );
+    // scene.add( torusKnot );
 
     swhydra();
 
@@ -188,7 +198,6 @@ function init(){
     const geometry = new THREE.PlaneGeometry( 1080/2, 1080/2, 10, 20 );
 
     const cubeMaterial3 = new THREE.MeshBasicMaterial( { color: 0xff6600, side: THREE.DoubleSide } );
-
     cubort = new THREE.Mesh( geometry, materialrt );
  
     scene.add( cubort ); 
@@ -250,11 +259,32 @@ function init(){
 	    
 	})
     */
+
+    /*
+    for(let i = 0; i < 72; i++){
+	achim[i] = new THREE.TextureLoader().load( "img/achim/"+(i+1)+".JPG" );
+	}
+    */
+
+    const materialDoble = new THREE.MeshBasicMaterial( {
+	color: 0xffffff,
+	map:texture,
+	side: THREE.DoubleSide} );
     
+    const megacubo = new THREE.BoxGeometry(1500, 1500, 1500);
+    megamesh = new THREE.Mesh( megacubo, materialDoble );
+    scene.add(megamesh); 
+
+    /*
     controls = new PointerLockControls( camera, document.body );
     controls.lock();
-
     scene.add( controls.getObject() );
+  
+    */
+    
+    controls = new OrbitControls( camera, renderer.domElement );
+    controls.maxDistance = 300;
+
     
     const onKeyDown = function ( event ) {
 	
@@ -273,7 +303,7 @@ function init(){
 	case 'Digit3':
 	    //Texto como textura en un objeto, revisar el tutorial de kinetic scupture
 	    console.log("escena 3");
-	    fondos();
+	    // fondos();
 	    add3();
 	    break;
 	case 'Digit4':
@@ -317,8 +347,12 @@ function init(){
 	    moveRight = true;
 	    break;
 
-	case'KeyC':
+	case 'KeyC':
 	    swhydra();
+	    break;
+
+	case 'KeyR':
+	    rm3(); 
 	    break; 
 	    
 	case 'Space':
@@ -364,12 +398,12 @@ function init(){
     // oscSend();    
     
     analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 1024;
+    analyser.fftSize = 512;
     let bufferLength = analyser.frequencyBinCount;
     dataArray = new Uint8Array(bufferLength);
 
     analyser.getByteTimeDomainData(dataArray)
-    analyser.smoothingTimeConstant = 0.99; 
+    analyser.smoothingTimeConstant = 0.9; 
 
     	
     // const audioCtx = new AudioContext();
@@ -399,6 +433,18 @@ function init(){
     
 }
 
+
+function retro() {
+    // const data = new Uint8Array( textureSize * textureSize * 3 );
+    texture = new THREE.FramebufferTexture( textureSize, textureSize, THREE.RGBAFormat );
+    //texture.minFilter = THREE.NearestFilter;
+    // texture.magFilter = THREE.NearestFilter;
+    //texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    //texture.offset.set( 0, 0 );
+    // texture.repeat.set( 2, 3 );
+}
+
+
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -412,6 +458,8 @@ function animate(){
 
 function render() {
 
+    // controles(); 
+
     /*
     for ( var i = 0; i < torusKnot.geometry.attributes.position.count; i++){
 	torusKnot.geometry.attributes.position.setX(i, torusClone.geometry.attributes.position.getX(i) * (dataArray[i])); 
@@ -420,16 +468,64 @@ function render() {
 
     }
 
-    
-    analyser.getByteFrequencyData(dataArray);
-   */
+    */
 
-    torusKnot.geometry.attributes.position.needsUpdate = true;
-    torusClone.geometry.attributes.position.needsUpdate = true;
+    var time2 = Date.now() * 0.005;
+    
+    // para cuando no hay pads 
+    camera.position.x = Math.sin( time2 * 0.125/16 ) * ( 75 + Math.sin( time2 * 0.125 )* 4) * 4; 
+    camera.position.y = Math.cos( time2 * 0.125/16 ) * 230; 
+    camera.position.z = Math.cos( time2 * 0.125/16 ) * - 230;
+   
+    camera.lookAt(0, 0, 0);
+
+    /*
+    if(analisisBool) {
+
+
+	
+	analyser.getByteFrequencyData(dataArray);
+	for(let i = 0; i < 14; i++){
+	    scene.children[i+6].children[0].scale.x = 1*dataArray[i] / 70;
+	    scene.children[i+6].children[0].scale.y = 1*dataArray[i] / 70; 
+	    scene.children[i+6].children[0].scale.z = 1*dataArray[i] / 70; 
+	    scene.children[i+6].children[0].geometry.attributes.position.needsUpdate = true;
+	    }
+	    }
+	    */
+	/*
+    //console.log(dataArray[0]);
+	scene.children[10].children[0].scale.x = dataArray[0] / 70;
+	scene.children[10].children[0].scale.y = dataArray[0] / 70; 
+	scene.children[10].children[0].scale.z = dataArray[0] / 70; 
+
+	scene.children[10].children[0].geometry.attributes.position.needsUpdate = true;
+
+	scene.children[12].children[0].scale.x = dataArray[1] /100;
+	scene.children[12].children[0].scale.y = dataArray[1] /100; 
+	scene.children[12].children[0].scale.z = dataArray[1] / 100; 
+
+	// console.log(dataArray[1]); 
+	scene.children[12].children[0].geometry.attributes.position.needsUpdate = true;
+
+	scene.children[7].children[0].scale.x = dataArray[2] / 100;
+	scene.children[7].children[0].scale.y = dataArray[2] / 100; 
+	scene.children[7].children[0].scale.z = dataArray[2] / 100; 
+
+	scene.children[7].children[0].geometry.attributes.position.needsUpdate = true;
+    }
+	*/
+    
+    megamesh.rotation.x += 0.0001; 
+    megamesh.rotation.y -= 0.0001; 
+
+    // con análisis, por alguna razon no funciona
+    //megamesh.rotation.x += -0.0000125 * (dataArray[1] - (dataArray[1]/2) );
+    //megamesh.rotation.y += -0.0000125 * (dataArray[1] - (dataArray[1]/2) ); 
+    //megamesh.rotation.z += -0.0000125 * (dataArray[1] - (dataArray[1]/2) ); 
+
     
     vit.needsUpdate = true; 
-
-    controles(); 
 
     switch( escena ) {
     case 0:
@@ -445,7 +541,6 @@ function render() {
 
 
     //if(audioBool){
-
  
     renderer.setRenderTarget(renderTarget);
     
@@ -454,8 +549,17 @@ function render() {
     renderer.setRenderTarget(null);
     
     renderer.render( scene, camera );
+    if (retroBool ){
+	vector.x = ( window.innerWidth * dpr / 2 ) - ( textureSize / 2 );
+	vector.y = ( window.innerHeight * dpr / 2 ) - ( textureSize / 2 );	
+	renderer.copyFramebufferToTexture( vector, texture );
+    }
+
+
 
 }
+
+
 
 function fuente(){
     
@@ -554,11 +658,6 @@ function add3(){
     
     let modelosNombres = ['01-corteza', '02-nopal', '03-agave', '04-cactus', '05-flor', '06-suculenta', '08-maguey', '09-hojas', '10-grid', '11-estrella', '12-roca', '13-hojas', '14-grid', '15-tronco', '16-hojas']
 
-        console.log(scene.children[5]); 
-
-    for(let i = 0; i < 15; i++){
-	scene.remove(scene.children[i+5]); 
-    }
     
         loaders[0].load(
 	    '3d/'+modelosNombres[0]+'/0000000.gltf',
@@ -570,12 +669,16 @@ function add3(){
 		gltf.scene.position.z = Math.random()*100-50;
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
+		let rando = Math.floor(Math.random() * 3) + 1;
 		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		    //gltf.scene.children[0].material.map = cubort.material.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		
 		//modelos[i] = gltf.scene.children[0];
@@ -597,12 +700,17 @@ function add3(){
 		gltf.scene.lookAt(0, 0, 0);
 		gltf.scene.children[0].material.map = materialVit.map;
 
-				let rando = Math.floor(Math.random() * 3);
+		let rando = Math.floor(Math.random() * 3)+1;
+
 		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		
 		//modelos[i] = gltf.scene.children[0];
@@ -623,12 +731,17 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
-		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		let rando = Math.floor(Math.random() * 3)+1;
+
+				if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		
 		//modelos[i] = gltf.scene.children[0];
@@ -650,12 +763,17 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
-		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		let rando = Math.floor(Math.random() * 3)+1;
+
+				if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    // gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		
 		//modelos[i] = gltf.scene.children[0];
@@ -677,14 +795,18 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
+		let rando = Math.floor(Math.random() * 3)+1;
 		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    // gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
-		
+			
 		//modelos[i] = gltf.scene.children[0];
 		scene.add(gltf.scene);
 	    
@@ -704,12 +826,17 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
+		let rando = Math.floor(Math.random() * 3)+1;
+
 		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		
 		//modelos[i] = gltf.scene.children[0];
@@ -731,12 +858,17 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
+		let rando = Math.floor(Math.random() * 3)+1;
+
 		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		
 		//modelos[i] = gltf.scene.children[0];
@@ -758,12 +890,17 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
+		let rando = Math.floor(Math.random() * 3)+1;
+
 		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		
 		//modelos[i] = gltf.scene.children[0];
@@ -785,12 +922,16 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
-		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		let rando = Math.floor(Math.random() * 3)+1;
+			if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    // gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		
 		//modelos[i] = gltf.scene.children[0];
@@ -812,12 +953,16 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
-		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		let rando = Math.floor(Math.random() * 3)+1;
+				if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    // gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		
 		//modelos[i] = gltf.scene.children[0];
@@ -838,12 +983,16 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
+		let rando = Math.floor(Math.random() * 3)+1;
 		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    // gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		
 		//modelos[i] = gltf.scene.children[0];
@@ -864,12 +1013,16 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
+		let rando = Math.floor(Math.random() * 3)+1;
 		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    // gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		
 		//modelos[i] = gltf.scene.children[0];
@@ -891,12 +1044,16 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
+		let rando = Math.floor(Math.random() * 2)+1;
 		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    // gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		
 		//modelos[i] = gltf.scene.children[0];
@@ -918,13 +1075,18 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
-		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		let rando = Math.floor(Math.random() * 3)+1;
+				if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
+		
 		
 		//modelos[i] = gltf.scene.children[0];
 		scene.add(gltf.scene);
@@ -945,15 +1107,18 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
+		let rando = Math.floor(Math.random() * 3)+1;
 		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    // gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
-		
-		//modelos[i] = gltf.scene.children[0];
+				//modelos[i] = gltf.scene.children[0];
 		scene.add(gltf.scene);
 	    
 	    }
@@ -961,7 +1126,7 @@ function add3(){
 
     
         loaders[14].load(
-	    '3d/'+modelosNombres[10]+'/0000000.gltf',
+	    '3d/'+modelosNombres[14]+'/0000000.gltf',
 	    function ( gltf ){
 
 		gltf.scene.scale.x = 400;
@@ -972,16 +1137,21 @@ function add3(){
 		gltf.scene.position.y = 0; 
 		gltf.scene.lookAt(0, 0, 0);
 
-		let rando = Math.floor(Math.random() * 3);
-		if(rando == 1){
-		    gltf.scene.children[0].material.map = cubort.material.map; 
+		let rando = Math.floor(Math.random() * 3)+1;
+				if(rando == 1){
+		    gltf.scene.children[0].material.map = cubort.material.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
 		if(rando == 2){
-		    gltf.scene.children[0].material.map = materialVit.map; 
+		    gltf.scene.children[0].material.map = materialVit.map;
+		    //gltf.scene.children[0].material.map = achim[Math.floor(Math.random() * 73)]; 
+		    
 		}
-		
+				
 		//modelos[i] = gltf.scene.children[0];
 		scene.add(gltf.scene);
+		analisisBool = true; 
 	    
 	    }
     )
@@ -993,9 +1163,13 @@ function up3(){
 }
 
 function rm3(){
-    for(let i = 0; i < modelos.length; modelos++){
-	scene.remove(modelos[i]); 
+   
+   console.log(scene.children.length); 
+
+    for(let i = 0; i < 14; i++){
+	scene.remove(scene.children[i+6]); 
     }
+    
 }
 
 
@@ -1092,300 +1266,87 @@ function swhydra( ) {
     
     switch( rand ){
     case 0:
-    src(o1).layer(
-	src(o1).mask(
-	    noise(2,.01).sub(noise(2,.01).modulate(solid(1,0),.003)).r().thresh(0.01,0))
-	    .colorama(.01))
-	.modulate(
-	    osc(Math.PI*2,0,Math.PI/2).scale(1/2).brightness(-.5).modulate(
-		noise(2,.01).sub(gradient())
-		,1),.01)
-	.modulatePixelate(
-	    osc(Math.PI*2,0,Math.PI/2).r().thresh(.15,0).color(1,0,0).add(
-		osc(Math.PI*2,0,Math.PI).g().thresh(.15,0).color(0,1,0))
-		.scale(.25)
-		.modulate(noise(2,.01).sub(gradient()),1),10400,128)
-	.layer(
-	    osc(15,0.1,1.5)
-		.mask(
-		    shape(4,.2,0))
-	)
-	.out(o1)
-    
-    solid().layer(o1).out()
-    break;
+	osc(105,0,0).rotate(0.11, 0.1).modulate(osc(10,0,0).rotate(0.3,-1).blend(o1, 0.1)).mult(osc(20,0.01,0)).out(o0)
+	osc(50,0.05, 0).blend(o0,5.9).modulate(o1,0.05).scale(0.9999).out(o1)
+	render(o1)
+	break;
     
     case 1:
-	osc(5, 0.15, 9)
-	    .rotate(.5)
-	    .mult(osc(25, .05, 9))
-	    .modulate(voronoi()
-		      .modulateScale(voronoi()
-				     .brightness(0.5)
-				     .contrast(1.95), 0.1)
-		      .modulate(voronoi(1.5, .1)
-				.brightness(0.15)
-				.contrast(1.95)
-              			, .5), 1.)
-	    .sub(gradient())
-	    .modulateHue(src(o0), 500)
-	    .out()
+	osc(10,0,0).rotate(0.11, 0.1).modulate(osc(10,0,0).rotate(0.3,-1).blend(o0, 0.1)).mult(osc(20,0.01,0)).out(o0)
+osc(50,0.05, 0).blend(o0,5.9).modulate(o0,1.05).out(o1)
+render(o1)
 	break;
 	
     case 2:
-	osc(22, 0.3, 2)
-	    .modulateScale(osc()
-			   .rotate(Math.PI / 2))
-	    .rotate(0.1, 1)
-	    .modulate(noise(), [0.1, 0.5, 0.6, 1, 0.2])
-	    .out(o1)
-	
-	src(o0)
-	    .layer(src(o1)
-		   .mask(shape(2)
-			 .scale(4, 0.001)
-			 .scrollX(0.5)))
-	    .scrollX(0.00075)
-	    .out() 
-
+	osc(10,0,0)
+	    .modulateRotate(o0)
+	    .scale(1.01)
+	    .modulate(osc(10,0,0).rotate(-0.3,-1).blend(o0, 0.1))
+	    .mult(osc(20,0.01,0))
+	    .out(o0)
 	break;
 	
     case 3:
-	src(o0)
-	    .modulate(
-		gradient()
-		    .pixelate(2,2)
-		    .brightness(-0.5)
-		    .mult(o0,1)
-		    .color([0,0,1/128,-1/128,1/64,-1/64,3/32,-1/32].fast(1/2).smooth(),[0,0,1/128,-1/128,1/64,-1/64,1/32,-1/32].fast(1/2.1).smooth())
-		, -0.75
-	    )
-	    .layer(
-		osc(Math.PI*16,1/48,Math.PI/1.5)
-		    .rotate(Math.PI/4,1/128)
-		    .mask(
-			shape(99,[1/256,1/32].fast(1/32).smooth(),0)
-		    )
-	    )
-	    .modulate(o0,-1/512)
-	    .hue(0.001)
-	    .out()
-	break;
-    case 4:
-	const width = window.innerWidth;
-	const height = window.innerHeight;
-	var a = 900;
-	var b = 1600;
-	let w = width / b;
-	let h = height / a;
-	
-	let delta = (l, m) => gradient(l)
-	    .diff(solid("st.x", "st.y", () => Math.sin(time * m)))
-	
-	let synth = (i, j, k, l, m) => osc(i, j, k)
-	    .diff(delta(l, m))
-	
-	function form(f, g, i, j, k, l, m, n) {
-	    if (n % 2 === 1) {
-   		return shape(n, "st.y+st.y", f)
-   		    .mult(synth(i, j, k, l, m)
-   			  .kaleid(n)
-   			  .rotate(Math.PI / 2))
-   		 .scale(1 / 2 + f)
-   		    .rotate(1 / 10, 1 / 10)
-   		    .scale(g);
-	    } else if (n % 2 === 0) {
-   		if (n % 4 === 0) {
-   		    return shape(n, "st.y+st.y", f)
-   			.mult(synth(i, j, k, l, m)
-   			      .kaleid(n)
-   			      .rotate(Math.PI / n))
-   			.scale(1 / 2 + f)
-   			.rotate(1 / 10, 1 / 10)
-   			.scale(g);
-   		} else {
-   		    return shape(n, "st.y+st.y", f)
-   			.mult(synth(i, j, k, l, m)
-   			      .kaleid(n)
-   			      .rotate(Math.PI / (n / 2)))
-   			.scale(1 / 2 + f)
-   			 .rotate(1 / 10, 1 / 10)
-   			.scale(g);
-   		}
-	    }
-	}
-	
-	function axis(f, g, h, i, j, k, l, m, n, o, v, w) {
-	    if (v === "x0") {
-   		return form(f, g, i, j, k, l, m, n)
-   		    .scrollX(() => (time / o))
-   		    .scale("st.x+st.x")
-   		    .scale(h, width / height, w);
-	    } else if (v === "x1") {
-   		return form(f, g, i, j, k, l, m, n)
-   		    .scrollX(() => (time / o))
-   		 .scale("st.x*st.x")
-   		    .scale(h, width / height, w);
-	    } else if (v === "y0") {
-   		return form(f, g, i, j, k, l, m, n)
-   		    .scrollY(() => (time / o))
-   		    .scale("st.y+st.y")
-   		    .scale(h, width / height, w);
-	    } else if (v === "y1") {
-   	 return form(f, g, i, j, k, l, m, n)
-   		 .scrollY(() => (time / o))
-   		 .scale("st.y*st.y")
-   		 .scale(h, width / height, w);
-    } else if (v === "z0") {
-   	 return form(f, g, i, j, k, l, m, n)
-   		 .scroll(() => (time / o), () => (time / o))
-   		 .scale("st.x+st.y")
-   		 .scale(h, width / height, w);
-    } else if (v === "z1") {
-   	 return form(f, g, i, j, k, l, m, n)
-   		 .scroll(() => (time / o), () => (time / o))
-   		 .scale("st.x*st.y")
-   		 .scale(h, width / height, w);
-    };
-};
-
-	axis(1 / 4, 1 / 2, a, 15, 1 / 16, 300, 1 / 2, 1, 4, 10, "y1", b)
-	    .scale(1 / 50)
-	    .diff(gradient(2)
-   		  .luma())
-	    .modulateScale(osc(Math.PI + Math.E))
-	    .blend(o0, 9 / 10)
-	    .out()
-
-	break;
-    case 5:
-	let k=()=>100
-	let d=(x)=>Math.PI*x/k()
-	
-	src(o1).hue(.01)
-	    .modulate(
-		osc(30,0,1.5).brightness(-.5).modulate(noise().sub(gradient())
-						       ,1),.003)
-	    .layer(
-		osc(5,0,1.5)
-	  .mask(
-	      shape(9,()=>d(.5),0)).scrollY(()=>d(.5)/2).rotate(()=>Math.atan2(d(.5),1))
-		    .scrollY(()=>-d(.5)/2-.5)
-		    .kaleid(()=>k()*.25).scale(.25)
-		    .mask(shape(999,.5).rotate(Math.PI/8))
-		    .scale("st.y+st.x")
-		    .modulate(osc(30,0,1.5).brightness(-.5).modulate(noise().sub(gradient()),1),.01)
-)
+	osc(5,.1, 0)
+	    .blend(o0,5.9)
+	    .modulateScale(o0,3.05).scale(.99).add(noise(200))
 	    .out(o1)
 
+render(o1)
+	break;
+    case 4:
+	noise(30,0.9,79)
+	    .rotate(-1,-1,-2).mask(shape(20))
+	    .modulateScale(o1)
+	    .modulateScale(o0,2)
+	    .blend(o1)
+	    .blend(o0)
+	    .scale(1.09)
+	    .out(o0)
+	break;
+    case 5:
+	osc(10,0,0)
+	    .modulateRotate(o0,-2).scrollX(3,0.1)
+	    .scale(1.01)
+	    .modulate(osc(10,0.4,0).rotate(-0.3,-1).blend(o0, 0.1))
+	    .mult(osc(20,0.1,0))
+	    .out(o1)
+	
 
-solid().layer(o1).out()
-
+	
+	render(o0)
 	break;
     case 6:
-	src(o0)
-    .saturate(9)
-    .brightness([-1, 1].smooth(1 / 9)
-   	 .fast(1 / 2))
-    .contrast([0, 3].smooth(1 / 3)
-   	 .fast(1 / 9))
-    .modulateHue(src(o0)
-   	 .scale("st.x+st.x")
-   	 .scale("st.y+st.y")
-   	 .scale(1.01), () => Math.tan(time / 100))
-    .layer(osc(1, 2, 9)
-   	   .sub(gradient(3)
-   		.mask(src(o0)
-   		      .diff(src(o0)
-   			    .pixelate(5, 1)
-   			    .mult(shape(9, 0, 1)
-   				  .repeat(5, 2)
-   				  .invert())
-   			    .diff(src(o0)
-   				  .scale("st.x+st.y")
-   				  .diff(src(o0)
-   					.scale(1.01))))
-   		      .mask(shape(4, 1 /2, 1 / 2))
-   		      .colorama(9), 3 / 10)))
-	    .out()
+	noise(9)
+	    .scale(1.1)
+	    .hue(.01)
+	    .modulateScale(src(o0))
+	    .out(o0)
 	
+	
+	
+render(o0)
 	break;
     case 7:
-	speed = 1;
-	shape(20, 0.2, 0.3)
-	    .color(0.5, 1.4,100)
-	    .scale(1.01)
-	    .repeat(9,9)
-	    .modulateScale(osc(5,1.5).modulate(o0,2))
-	    .scale(0.99)
-	    .modulate(noise(4, 4))
-	    .rotate(1, .2)
+	noise(9)
+	    .scale(1.1)
+	    .pixelate()
+	    .modulateScale(src(o0).scale(0.99).scrollY([3,3,0.4,1].smooth()))
 	    .out(o0)
 	break;
     case 8:
-	let k1=()=>100
-	let d1=(x)=>Math.PI*x/k1()
-	
-	src(o1).colorama(.001)
-	    .modulate(
-		osc(6,0,1.5).brightness(-.5).modulate(noise().sub(gradient())
-						      .add(
-							  solid(1,1,1).mask(
-							      shape(2,()=>d1(1),0.1)).scrollY(()=>d1(2)/2).rotate(()=>Math.atan2(d1(2),1))
-							      .scrollY(()=>-d1(2)/2-.5)
-							      .kaleid(()=>k1()*.25).scale(.25)
-							      .mask(shape(999,.5).rotate(Math.PI/8))
-							      .modulateRotate(shape(999,0,1),1).scale(2),-1
-						      ),3.14),.003)
-	    .layer(
-		osc(5,0,1.5)
-		    .modulateScale(osc(1,0),-.2,1)
-		    .pixelate(5)
-		    .scrollX(.3)
-		    .scale(1,1.25)
-		    .mask(
-			shape(2,()=>d1(.5),0)).scrollY(()=>d1(.5)/2).rotate(()=>Math.atan2(d1(.5),1))
-		    .scrollY(()=>-d1(.5)/2-.5)
-		    .kaleid(()=>k1()*.25).scale(.25)
-		    .mask(shape(999,.5).rotate(Math.PI/8))
-		    .modulateRotate(shape(999,0,1),1).scale(2)
-	    )
-	    .out(o1)
-	
-	solid().layer(o1).out()
+	voronoi(8,1)
+.mult(osc(10,0.1,0).kaleid(4))
+.modulate(o0,0.5)
+.add(o0,0.7)
+.scrollY(0.01)
+.scale(1.0001)
+.modulate(noise(10,1),0.08)
+.luma(0.1)
+.out()
 
-	break;
-    case 9:
-	let k2=()=>100
-	let d2=(x)=>Math.PI*x/k2()
 
-	src(o1).colorama(.001)
-	    .modulate(
-		osc(6,0,1.5).brightness(-.5).modulate(noise().sub(gradient())
-						      .add(
-							  solid(1,1,1).mask(
-							      shape(2,()=>d2(1),0.1)).scrollY(()=>d2(2)/2).rotate(()=>Math.atan2(d2(2),1))
-							      .scrollY(()=>-d2(2)/2-.5)
-							      .kaleid(()=>k2()*.25).scale(.25)
-							      .mask(shape(999,.5).rotate(Math.PI/8))
-	.modulateRotate(shape(999,0,1),1).scale(2),-1
-  ),3.14),.003)
-  .layer(
-  osc(5,0,1.5)
-  .modulateScale(osc(1,0),-.2,1)
-  .pixelate(5)
-  .scrollX(.3)
-  .scale(1,1.25)
-  .mask(
-  shape(2,()=>d2(.5),0)).scrollY(()=>d2(.5)/2).rotate(()=>Math.atan2(d2(.5),1))
-  .scrollY(()=>-d2(.5)/2-.5)
-  .kaleid(()=>k2()*.25).scale(.25)
-  .mask(shape(999,.5).rotate(Math.PI/8))
-  .modulateRotate(shape(999,0,1),1).scale(2)
-)
-  .out(o1)
-
-solid().layer(o1).out()
+speed = 0.2
 	break; 
     }
 }
@@ -1396,8 +1357,6 @@ function fondos( ) {
     const patharray = ['1-cueva', '2-piedras', '3-sol', '4-verde', '5-espacio', '6-pasto', '7-tronco', '8-lago']; 
 
     let rand = Math.floor(Math.random()*7); 
-
-    
     
     const path = 'maps/' + patharray[rand]+'/';
     const format = '.png';
