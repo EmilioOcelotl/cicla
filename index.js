@@ -14,6 +14,11 @@ import { FontLoader } from './jsm/loaders/FontLoader.js';
 import { Flow } from './jsm/modifiers/CurveModifier.js';
 import { TextGeometry } from './jsm/geometries/TextGeometry.js';
 
+const osc2 = new OSC();
+osc2.open();
+
+// document.body.style.cursor = 'none'; 
+
 let texture;
 let dpr = window.devicePixelRatio; 
 let textureSize = 1024 * dpr;
@@ -177,7 +182,6 @@ function init(){
     scene.add( light2 );
 
     // const geometryTor = new THREE.SphereGeometry( 20, 32, 16 );
-
     
     const geometryTor = new THREE.TorusKnotGeometry( 20, 3, 100, 100 );
     materialVit = new THREE.MeshStandardMaterial( { color: 0xffffff, map: vit, envMap: refractionCube, roughness: 0.1, metalness:0.7 } );
@@ -429,7 +433,33 @@ function init(){
 	}
 
     //animate()
-    fuente(); 
+    fuente();
+
+    // primer osc 
+    osc2.on('/switchHydra', message => {
+	swhydra(); 
+    });
+
+    //segundo osc reseteo. Esto no funciona siempre
+
+    osc2.on('/reset', message => {
+	add3(); 
+    });
+    
+    //tercer osc rotación en xyz
+	
+    osc2.on('/camX', message => {
+	camera.position.x = message.args[0];
+    })
+
+    osc2.on('/camY', message => {
+	camera.position.y = message.args[0];
+    })
+
+    osc2.on('/camZ', message => {
+	camera.position.z = message.args[0];
+    })
+   
     
 }
 
@@ -473,9 +503,9 @@ function render() {
     var time2 = Date.now() * 0.005;
     
     // para cuando no hay pads 
-    camera.position.x = Math.sin( time2 * 0.125/16 ) * ( 75 + Math.sin( time2 * 0.125 )* 4) * 4; 
-    camera.position.y = Math.cos( time2 * 0.125/16 ) * 230; 
-    camera.position.z = Math.cos( time2 * 0.125/16 ) * - 230;
+    //camera.position.x = Math.sin( time2 * 0.125/16 ) * ( 75 + Math.sin( time2 * 0.125 )* 4) * 4; 
+    //camera.position.y = Math.cos( time2 * 0.125/16 ) * 230; 
+    //camera.position.z = Math.cos( time2 * 0.125/16 ) * - 230;
    
     camera.lookAt(0, 0, 0);
 
@@ -558,8 +588,6 @@ function render() {
 
 
 }
-
-
 
 function fuente(){
     
@@ -658,8 +686,12 @@ function add3(){
     
     let modelosNombres = ['01-corteza', '02-nopal', '03-agave', '04-cactus', '05-flor', '06-suculenta', '08-maguey', '09-hojas', '10-grid', '11-estrella', '12-roca', '13-hojas', '14-grid', '15-tronco', '16-hojas']
 
+    for(let i = 0; i < 14; i++){
+	scene.remove(scene.children[i+5]); 
+    }
     
-        loaders[0].load(
+    
+    loaders[0].load(
 	    '3d/'+modelosNombres[0]+'/0000000.gltf',
 	    function ( gltf ){
 		gltf.scene.scale.x = 400;
@@ -1260,97 +1292,310 @@ function controles(){
 
 }
 
+
 function swhydra( ) {
 
     let rand = Math.floor(Math.random() * 10);
     
     switch( rand ){
     case 0:
-	osc(105,0,0).rotate(0.11, 0.1).modulate(osc(10,0,0).rotate(0.3,-1).blend(o1, 0.1)).mult(osc(20,0.01,0)).out(o0)
-	osc(50,0.05, 0).blend(o0,5.9).modulate(o1,0.05).scale(0.9999).out(o1)
-	render(o1)
-	break;
+    src(o1).layer(
+	src(o1).mask(
+	    noise(2,.01).sub(noise(2,.01).modulate(solid(1,0),.003)).r().thresh(0.01,0))
+	    .colorama(.01))
+	.modulate(
+	    osc(Math.PI*2,0,Math.PI/2).scale(1/2).brightness(-.5).modulate(
+		noise(2,.01).sub(gradient())
+		,1),.01)
+	.modulatePixelate(
+	    osc(Math.PI*2,0,Math.PI/2).r().thresh(.15,0).color(1,0,0).add(
+		osc(Math.PI*2,0,Math.PI).g().thresh(.15,0).color(0,1,0))
+		.scale(.25)
+		.modulate(noise(2,.01).sub(gradient()),1),10400,128)
+	.layer(
+	    osc(15,0.1,1.5)
+		.mask(
+		    shape(4,.2,0))
+	)
+	.out(o1)
+    
+    solid().layer(o1).out()
+    break;
     
     case 1:
-	osc(10,0,0).rotate(0.11, 0.1).modulate(osc(10,0,0).rotate(0.3,-1).blend(o0, 0.1)).mult(osc(20,0.01,0)).out(o0)
-osc(50,0.05, 0).blend(o0,5.9).modulate(o0,1.05).out(o1)
-render(o1)
+	osc(5, 0.15, 9)
+	    .rotate(.5)
+	    .mult(osc(25, .05, 9))
+	    .modulate(voronoi()
+		      .modulateScale(voronoi()
+				     .brightness(0.5)
+				     .contrast(1.95), 0.1)
+		      .modulate(voronoi(1.5, .1)
+				.brightness(0.15)
+				.contrast(1.95)
+              			, .5), 1.)
+	    .sub(gradient())
+	    .modulateHue(src(o0), 500)
+	    .out()
 	break;
 	
     case 2:
-	osc(10,0,0)
-	    .modulateRotate(o0)
-	    .scale(1.01)
-	    .modulate(osc(10,0,0).rotate(-0.3,-1).blend(o0, 0.1))
-	    .mult(osc(20,0.01,0))
-	    .out(o0)
+	osc(22, 0.3, 2)
+	    .modulateScale(osc()
+			   .rotate(Math.PI / 2))
+	    .rotate(0.1, 1)
+	    .modulate(noise(), [0.1, 0.5, 0.6, 1, 0.2])
+	    .out(o1)
+	
+	src(o0)
+	    .layer(src(o1)
+		   .mask(shape(2)
+			 .scale(4, 0.001)
+			 .scrollX(0.5)))
+	    .scrollX(0.00075)
+	    .out() 
+
 	break;
 	
     case 3:
-	osc(5,.1, 0)
-	    .blend(o0,5.9)
-	    .modulateScale(o0,3.05).scale(.99).add(noise(200))
-	    .out(o1)
-
-render(o1)
+	src(o0)
+	    .modulate(
+		gradient()
+		    .pixelate(2,2)
+		    .brightness(-0.5)
+		    .mult(o0,1)
+		    .color([0,0,1/128,-1/128,1/64,-1/64,3/32,-1/32].fast(1/2).smooth(),[0,0,1/128,-1/128,1/64,-1/64,1/32,-1/32].fast(1/2.1).smooth())
+		, -0.75
+	    )
+	    .layer(
+		osc(Math.PI*16,1/48,Math.PI/1.5)
+		    .rotate(Math.PI/4,1/128)
+		    .mask(
+			shape(99,[1/256,1/32].fast(1/32).smooth(),0)
+		    )
+	    )
+	    .modulate(o0,-1/512)
+	    .hue(0.001)
+	    .out()
 	break;
     case 4:
-	noise(30,0.9,79)
-	    .rotate(-1,-1,-2).mask(shape(20))
-	    .modulateScale(o1)
-	    .modulateScale(o0,2)
-	    .blend(o1)
-	    .blend(o0)
-	    .scale(1.09)
-	    .out(o0)
+	const width = window.innerWidth;
+	const height = window.innerHeight;
+	var a = 900;
+	var b = 1600;
+	let w = width / b;
+	let h = height / a;
+	
+	let delta = (l, m) => gradient(l)
+	    .diff(solid("st.x", "st.y", () => Math.sin(time * m)))
+	
+	let synth = (i, j, k, l, m) => osc(i, j, k)
+	    .diff(delta(l, m))
+	
+	function form(f, g, i, j, k, l, m, n) {
+	    if (n % 2 === 1) {
+   		return shape(n, "st.y+st.y", f)
+   		    .mult(synth(i, j, k, l, m)
+   			  .kaleid(n)
+   			  .rotate(Math.PI / 2))
+   		 .scale(1 / 2 + f)
+   		    .rotate(1 / 10, 1 / 10)
+   		    .scale(g);
+	    } else if (n % 2 === 0) {
+   		if (n % 4 === 0) {
+   		    return shape(n, "st.y+st.y", f)
+   			.mult(synth(i, j, k, l, m)
+   			      .kaleid(n)
+   			      .rotate(Math.PI / n))
+   			.scale(1 / 2 + f)
+   			.rotate(1 / 10, 1 / 10)
+   			.scale(g);
+   		} else {
+   		    return shape(n, "st.y+st.y", f)
+   			.mult(synth(i, j, k, l, m)
+   			      .kaleid(n)
+   			      .rotate(Math.PI / (n / 2)))
+   			.scale(1 / 2 + f)
+   			 .rotate(1 / 10, 1 / 10)
+   			.scale(g);
+   		}
+	    }
+	}
+	
+	function axis(f, g, h, i, j, k, l, m, n, o, v, w) {
+	    if (v === "x0") {
+   		return form(f, g, i, j, k, l, m, n)
+   		    .scrollX(() => (time / o))
+   		    .scale("st.x+st.x")
+   		    .scale(h, width / height, w);
+	    } else if (v === "x1") {
+   		return form(f, g, i, j, k, l, m, n)
+   		    .scrollX(() => (time / o))
+   		 .scale("st.x*st.x")
+   		    .scale(h, width / height, w);
+	    } else if (v === "y0") {
+   		return form(f, g, i, j, k, l, m, n)
+   		    .scrollY(() => (time / o))
+   		    .scale("st.y+st.y")
+   		    .scale(h, width / height, w);
+	    } else if (v === "y1") {
+   	 return form(f, g, i, j, k, l, m, n)
+   		 .scrollY(() => (time / o))
+   		 .scale("st.y*st.y")
+   		 .scale(h, width / height, w);
+    } else if (v === "z0") {
+   	 return form(f, g, i, j, k, l, m, n)
+   		 .scroll(() => (time / o), () => (time / o))
+   		 .scale("st.x+st.y")
+   		 .scale(h, width / height, w);
+    } else if (v === "z1") {
+   	 return form(f, g, i, j, k, l, m, n)
+   		 .scroll(() => (time / o), () => (time / o))
+   		 .scale("st.x*st.y")
+   		 .scale(h, width / height, w);
+    };
+};
+
+	axis(1 / 4, 1 / 2, a, 15, 1 / 16, 300, 1 / 2, 1, 4, 10, "y1", b)
+	    .scale(1 / 50)
+	    .diff(gradient(2)
+   		  .luma())
+	    .modulateScale(osc(Math.PI + Math.E))
+	    .blend(o0, 9 / 10)
+	    .out()
+
 	break;
     case 5:
-	osc(10,0,0)
-	    .modulateRotate(o0,-2).scrollX(3,0.1)
-	    .scale(1.01)
-	    .modulate(osc(10,0.4,0).rotate(-0.3,-1).blend(o0, 0.1))
-	    .mult(osc(20,0.1,0))
+	let k=()=>100
+	let d=(x)=>Math.PI*x/k()
+	
+	src(o1).hue(.01)
+	    .modulate(
+		osc(30,0,1.5).brightness(-.5).modulate(noise().sub(gradient())
+						       ,1),.003)
+	    .layer(
+		osc(5,0,1.5)
+	  .mask(
+	      shape(9,()=>d(.5),0)).scrollY(()=>d(.5)/2).rotate(()=>Math.atan2(d(.5),1))
+		    .scrollY(()=>-d(.5)/2-.5)
+		    .kaleid(()=>k()*.25).scale(.25)
+		    .mask(shape(999,.5).rotate(Math.PI/8))
+		    .scale("st.y+st.x")
+		    .modulate(osc(30,0,1.5).brightness(-.5).modulate(noise().sub(gradient()),1),.01)
+)
 	    .out(o1)
-	
 
-	
-	render(o0)
+
+solid().layer(o1).out()
+
 	break;
     case 6:
-	noise(9)
-	    .scale(1.1)
-	    .hue(.01)
-	    .modulateScale(src(o0))
-	    .out(o0)
+	src(o0)
+    .saturate(9)
+    .brightness([-1, 1].smooth(1 / 9)
+   	 .fast(1 / 2))
+    .contrast([0, 3].smooth(1 / 3)
+   	 .fast(1 / 9))
+    .modulateHue(src(o0)
+   	 .scale("st.x+st.x")
+   	 .scale("st.y+st.y")
+   	 .scale(1.01), () => Math.tan(time / 100))
+    .layer(osc(1, 2, 9)
+   	   .sub(gradient(3)
+   		.mask(src(o0)
+   		      .diff(src(o0)
+   			    .pixelate(5, 1)
+   			    .mult(shape(9, 0, 1)
+   				  .repeat(5, 2)
+   				  .invert())
+   			    .diff(src(o0)
+   				  .scale("st.x+st.y")
+   				  .diff(src(o0)
+   					.scale(1.01))))
+   		      .mask(shape(4, 1 /2, 1 / 2))
+   		      .colorama(9), 3 / 10)))
+	    .out()
 	
-	
-	
-render(o0)
 	break;
     case 7:
-	noise(9)
-	    .scale(1.1)
-	    .pixelate()
-	    .modulateScale(src(o0).scale(0.99).scrollY([3,3,0.4,1].smooth()))
+	speed = 1;
+	shape(20, 0.2, 0.3)
+	    .color(0.5, 1.4,100)
+	    .scale(1.01)
+	    .repeat(9,9)
+	    .modulateScale(osc(5,1.5).modulate(o0,2))
+	    .scale(0.99)
+	    .modulate(noise(4, 4))
+	    .rotate(1, .2)
 	    .out(o0)
 	break;
     case 8:
-	voronoi(8,1)
-.mult(osc(10,0.1,0).kaleid(4))
-.modulate(o0,0.5)
-.add(o0,0.7)
-.scrollY(0.01)
-.scale(1.0001)
-.modulate(noise(10,1),0.08)
-.luma(0.1)
-.out()
+	let k1=()=>100
+	let d1=(x)=>Math.PI*x/k1()
+	
+	src(o1).colorama(.001)
+	    .modulate(
+		osc(6,0,1.5).brightness(-.5).modulate(noise().sub(gradient())
+						      .add(
+							  solid(1,1,1).mask(
+							      shape(2,()=>d1(1),0.1)).scrollY(()=>d1(2)/2).rotate(()=>Math.atan2(d1(2),1))
+							      .scrollY(()=>-d1(2)/2-.5)
+							      .kaleid(()=>k1()*.25).scale(.25)
+							      .mask(shape(999,.5).rotate(Math.PI/8))
+							      .modulateRotate(shape(999,0,1),1).scale(2),-1
+						      ),3.14),.003)
+	    .layer(
+		osc(5,0,1.5)
+		    .modulateScale(osc(1,0),-.2,1)
+		    .pixelate(5)
+		    .scrollX(.3)
+		    .scale(1,1.25)
+		    .mask(
+			shape(2,()=>d1(.5),0)).scrollY(()=>d1(.5)/2).rotate(()=>Math.atan2(d1(.5),1))
+		    .scrollY(()=>-d1(.5)/2-.5)
+		    .kaleid(()=>k1()*.25).scale(.25)
+		    .mask(shape(999,.5).rotate(Math.PI/8))
+		    .modulateRotate(shape(999,0,1),1).scale(2)
+	    )
+	    .out(o1)
+	
+	solid().layer(o1).out()
 
+	break;
+    case 9:
+	let k2=()=>100
+	let d2=(x)=>Math.PI*x/k2()
 
-speed = 0.2
+	src(o1).colorama(.001)
+	    .modulate(
+		osc(6,0,1.5).brightness(-.5).modulate(noise().sub(gradient())
+						      .add(
+							  solid(1,1,1).mask(
+							      shape(2,()=>d2(1),0.1)).scrollY(()=>d2(2)/2).rotate(()=>Math.atan2(d2(2),1))
+							      .scrollY(()=>-d2(2)/2-.5)
+							      .kaleid(()=>k2()*.25).scale(.25)
+							      .mask(shape(999,.5).rotate(Math.PI/8))
+	.modulateRotate(shape(999,0,1),1).scale(2),-1
+  ),3.14),.003)
+  .layer(
+  osc(5,0,1.5)
+  .modulateScale(osc(1,0),-.2,1)
+  .pixelate(5)
+  .scrollX(.3)
+  .scale(1,1.25)
+  .mask(
+  shape(2,()=>d2(.5),0)).scrollY(()=>d2(.5)/2).rotate(()=>Math.atan2(d2(.5),1))
+  .scrollY(()=>-d2(.5)/2-.5)
+  .kaleid(()=>k2()*.25).scale(.25)
+  .mask(shape(999,.5).rotate(Math.PI/8))
+  .modulateRotate(shape(999,0,1),1).scale(2)
+)
+  .out(o1)
+
+solid().layer(o1).out()
 	break; 
     }
 }
-
 
 function fondos( ) {
 
@@ -1405,3 +1650,4 @@ function final(){
     scene.remove(torusKnot);
     
 }
+
